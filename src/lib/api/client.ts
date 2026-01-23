@@ -4,10 +4,8 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'https://gopass-backend-nlb1.onrender.com/api';
-    
     this.client = axios.create({
-      baseURL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -15,7 +13,7 @@ class ApiClient {
       },
     });
 
-    console.log('🌐 API Client initialized with baseURL:', baseURL);
+    console.log('🌐 API Client initialized with baseURL:', process.env.NEXT_PUBLIC_API_URL);
     this.setupInterceptors();
   }
 
