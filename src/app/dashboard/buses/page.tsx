@@ -22,12 +22,14 @@ import { MoreHorizontal, Plus, Trash2, Edit, User, Activity } from 'lucide-react
 import { Input } from '@/components/ui/input';
 
 import { BusDialog } from '@/components/buses/BusDialog';
+import { AssignDriverDialog } from '@/components/buses/AssignDriverDialog';
 
 export default function BusesPage() {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
 
   useEffect(() => {
@@ -54,6 +56,11 @@ export default function BusesPage() {
   const handleEdit = (bus: Bus) => {
     setSelectedBus(bus);
     setIsDialogOpen(true);
+  };
+
+  const handleAssignDriver = (bus: Bus) => {
+    setSelectedBus(bus);
+    setIsAssignDialogOpen(true);
   };
 
   const handleSubmit = async (data: Partial<Bus>) => {
@@ -179,7 +186,7 @@ export default function BusesPage() {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAssignDriver(bus)}>
                           <User className="mr-2 h-4 w-4" />
                           Assign Driver
                         </DropdownMenuItem>
@@ -202,6 +209,13 @@ export default function BusesPage() {
         onOpenChange={setIsDialogOpen}
         bus={selectedBus}
         onSubmit={handleSubmit}
+      />
+
+      <AssignDriverDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        bus={selectedBus}
+        onAssigned={loadBuses}
       />
     </div>
   );
