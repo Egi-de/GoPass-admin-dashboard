@@ -38,7 +38,7 @@ const routeSchema = z.object({
   destination: z.string().min(2, 'Destination is required'),
   price: z.number().min(0, 'Price must be positive'),
   estimatedDuration: z.string().min(1, 'Duration is required'),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional(),
 });
 
 type RouteFormValues = z.infer<typeof routeSchema>;
