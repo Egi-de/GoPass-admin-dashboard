@@ -146,7 +146,7 @@ export default function RoutesPage() {
                   <TableCell>{route.origin}</TableCell>
                   <TableCell>{route.destination}</TableCell>
                   <TableCell>{new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(route.price)}</TableCell>
-                  <TableCell>{route.duration} mins</TableCell>
+                  <TableCell>{route.estimatedDuration}</TableCell>
                   <TableCell>
                     <Badge variant={route.isActive ? 'default' : 'secondary'}>
                       {route.isActive ? 'Active' : 'Inactive'}

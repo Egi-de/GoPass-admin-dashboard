@@ -36,7 +36,7 @@ const routeSchema = z.object({
   name: z.string().min(2, 'Route name is required'),
   origin: z.string().min(2, 'Origin is required'),
   destination: z.string().min(2, 'Destination is required'),
-  price: z.coerce.number().min(0, 'Price must be positive'),
+  price: z.number().min(0, 'Price must be positive'),
   estimatedDuration: z.string().min(1, 'Duration is required'),
   isActive: z.boolean().default(true),
 });
@@ -164,7 +164,11 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
                   <FormItem>
                     <FormLabel>Price (RWF)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

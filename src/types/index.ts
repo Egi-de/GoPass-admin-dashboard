@@ -43,9 +43,9 @@ export interface Route {
   origin: string;
   destination: string;
   distance: number;
-  duration: number;
+  estimatedDuration: string;
   price: number;
-  isActive: boolean;
+  isActive?: boolean;
   waypoints?: any;
   createdAt: string;
   updatedAt: string;
