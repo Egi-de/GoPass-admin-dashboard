@@ -22,7 +22,13 @@ export default function DashboardPage() {
       }
     };
 
+    // Load immediately
     loadStats();
+    
+    // Refresh every 10 seconds
+    const interval = setInterval(loadStats, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (

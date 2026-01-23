@@ -66,14 +66,27 @@ export default function TrackingPage() {
 
     // Listen to Firebase Realtime Database
     const busesRef = ref(db, 'buses');
+    console.log('🔥 Setting up Firebase listener for /buses');
+    console.log('🔥 Firebase Database URL:', process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
+    
     const unsubscribe = onValue(busesRef, (snapshot) => {
+      console.log('🔥 Firebase snapshot received');
+      console.log('🔥 Snapshot exists:', snapshot.exists());
+      
       if (snapshot.exists()) {
         const firebaseData: Record<string, FirebaseBusData> = snapshot.val();
+        console.log('🔥 Raw Firebase data:', JSON.stringify(firebaseData, null, 2));
         
         // Transform Firebase data to match map component expectations
         const transformedLocations: Record<string, BusLocation> = {};
         
         Object.entries(firebaseData).forEach(([busId, busData]) => {
+          console.log(`🔥 Processing bus ${busId}:`, {
+            hasLocation: !!busData.location,
+            status: busData.status,
+            location: busData.location
+          });
+          
           // Only include buses with active location data
           if (busData.location && busData.status === 'ON_ROUTE') {
             transformedLocations[busId] = {
@@ -86,6 +99,9 @@ export default function TrackingPage() {
               plateNumber: busData.plateNumber || busId,
               routeName: busData.routeName || 'Unknown Route',
             };
+            console.log(`✅ Added bus ${busId} to map`);
+          } else {
+            console.log(`⚠️ Skipped bus ${busId}: location=${!!busData.location}, status=${busData.status}`);
           }
         });
         
@@ -95,9 +111,12 @@ export default function TrackingPage() {
         setLocations({});
         console.log('📍 No active tracking data in Firebase');
       }
+    }, (error) => {
+      console.error('❌ Firebase listener error:', error);
     });
 
     return () => {
+      console.log('🔥 Cleaning up Firebase listener');
       off(busesRef);
     };
   }, []);
