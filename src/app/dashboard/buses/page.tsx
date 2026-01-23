@@ -172,7 +172,7 @@ export default function BusesPage() {
                       {bus.status.replace('_', ' ')}
                     </span>
                   </TableCell>
-                  <TableCell>{bus.driverId || 'Unassigned'}</TableCell>
+                  <TableCell>{bus.driver?.name || 'Unassigned'}</TableCell>
                   <TableCell>{bus.routeId || 'Unassigned'}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

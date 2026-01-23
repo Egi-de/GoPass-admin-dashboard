@@ -33,6 +33,11 @@ export interface Bus {
   status: 'IDLE' | 'ON_ROUTE' | 'DELAYED' | 'MAINTENANCE';
   routeId?: string;
   driverId?: string;
+  driver?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
