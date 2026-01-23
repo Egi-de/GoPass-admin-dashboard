@@ -33,6 +33,8 @@ interface BusLocation {
   heading: number;
   timestamp: number;
   busId: string;
+  plateNumber: string;
+  routeName: string;
 }
 
 interface MapProps {
@@ -66,9 +68,6 @@ export default function TrackingMap({ locations, buses, routes }: MapProps) {
       />
       
       {Object.entries(locations).map(([busId, location]) => {
-        const bus = buses.find(b => b.id === busId);
-        const route = routes.find(r => r.id === bus?.routeId);
-        
         return (
           <Marker 
             key={busId} 
@@ -77,9 +76,9 @@ export default function TrackingMap({ locations, buses, routes }: MapProps) {
           >
             <Popup>
               <div className="p-2 min-w-[200px]">
-                <h3 className="font-bold text-lg mb-1">{bus?.plateNumber || 'Unknown Bus'}</h3>
+                <h3 className="font-bold text-lg mb-1">{location.plateNumber}</h3>
                 <div className="text-sm space-y-1">
-                  <p><span className="font-semibold">Route:</span> {route?.name || 'N/A'}</p>
+                  <p><span className="font-semibold">Route:</span> {location.routeName}</p>
                   <p><span className="font-semibold">Speed:</span> {location.speed.toFixed(1)} km/h</p>
                   <p><span className="font-semibold">Updated:</span> {new Date(location.timestamp).toLocaleTimeString()}</p>
                 </div>

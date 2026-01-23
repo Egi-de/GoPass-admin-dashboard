@@ -22,6 +22,28 @@ const TrackingMap = dynamic(() => import('./TrackingMap'), {
   ),
 });
 
+interface FirebaseBusData {
+  id: string;
+  plateNumber: string;
+  routeId: string | null;
+  routeName?: string;
+  origin?: string;
+  destination?: string;
+  status: string;
+  driverId?: string;
+  driverName?: string;
+  location: {
+    lat: number;
+    lng: number;
+    speed: number;
+    heading: number;
+    accuracy: number;
+    updatedAt: number;
+  } | null;
+  startedAt?: number;
+  lastUpdated?: number;
+}
+
 interface BusLocation {
   latitude: number;
   longitude: number;
@@ -29,6 +51,8 @@ interface BusLocation {
   heading: number;
   timestamp: number;
   busId: string;
+  plateNumber: string;
+  routeName: string;
 }
 
 export default function TrackingPage() {
@@ -44,8 +68,32 @@ export default function TrackingPage() {
     const busesRef = ref(db, 'buses');
     const unsubscribe = onValue(busesRef, (snapshot) => {
       if (snapshot.exists()) {
-        const data = snapshot.val();
-        setLocations(data);
+        const firebaseData: Record<string, FirebaseBusData> = snapshot.val();
+        
+        // Transform Firebase data to match map component expectations
+        const transformedLocations: Record<string, BusLocation> = {};
+        
+        Object.entries(firebaseData).forEach(([busId, busData]) => {
+          // Only include buses with active location data
+          if (busData.location && busData.status === 'ON_ROUTE') {
+            transformedLocations[busId] = {
+              latitude: busData.location.lat,
+              longitude: busData.location.lng,
+              speed: busData.location.speed * 3.6, // Convert m/s to km/h
+              heading: busData.location.heading,
+              timestamp: busData.location.updatedAt,
+              busId: busId,
+              plateNumber: busData.plateNumber || busId,
+              routeName: busData.routeName || 'Unknown Route',
+            };
+          }
+        });
+        
+        setLocations(transformedLocations);
+        console.log(`📍 Updated tracking data: ${Object.keys(transformedLocations).length} active buses`);
+      } else {
+        setLocations({});
+        console.log('📍 No active tracking data in Firebase');
       }
     });
 
@@ -112,44 +160,38 @@ export default function TrackingPage() {
         <div className="space-y-4">
           <h2 className="font-semibold text-lg">Active Buses</h2>
           <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-            {activeBuses.length === 0 ? (
+            {Object.keys(locations).length === 0 ? (
               <div className="text-center py-8 text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                No buses currently on route
+                No buses currently tracking
               </div>
             ) : (
-              activeBuses.map((bus) => {
-                const location = locations[bus.id];
-                const route = getBusRoute(bus);
+              Object.entries(locations).map(([busId, location]) => {
+                const bus = activeBuses.find(b => b.id === busId);
+                const route = bus ? getBusRoute(bus) : null;
                 
                 return (
-                  <Card key={bus.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                  <Card key={busId} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardHeader className="p-4 pb-2">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-base font-bold">{bus.plateNumber}</CardTitle>
-                        {location ? (
-                          <Badge className="bg-green-500 hover:bg-green-600">Live</Badge>
-                        ) : (
-                          <Badge variant="secondary">Offline</Badge>
-                        )}
+                        <CardTitle className="text-base font-bold">{location.plateNumber}</CardTitle>
+                        <Badge className="bg-green-500 hover:bg-green-600">Live</Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-2 text-sm space-y-2">
                       <div className="flex items-center text-gray-600 dark:text-gray-300">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span className="truncate">{route?.name || 'Unknown Route'}</span>
+                        <span className="truncate">{location.routeName}</span>
                       </div>
-                      {location && (
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mt-2 pt-2 border-t">
-                          <div>
-                            <span className="block font-medium">Speed</span>
-                            {location.speed.toFixed(1)} km/h
-                          </div>
-                          <div>
-                            <span className="block font-medium">Last Update</span>
-                            {format(new Date(location.timestamp), 'HH:mm:ss')}
-                          </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mt-2 pt-2 border-t">
+                        <div>
+                          <span className="block font-medium">Speed</span>
+                          {location.speed.toFixed(1)} km/h
                         </div>
-                      )}
+                        <div>
+                          <span className="block font-medium">Last Update</span>
+                          {format(new Date(location.timestamp), 'HH:mm:ss')}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 );
