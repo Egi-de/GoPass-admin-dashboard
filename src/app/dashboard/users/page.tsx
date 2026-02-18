@@ -222,11 +222,15 @@ export default function UsersPage() {
 
   const handleDelete = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
+    // Optimistically remove from UI immediately
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
     try {
       await usersApi.delete(userId);
-      await loadUsers();
+      // No re-fetch needed — optimistic remove is the source of truth
     } catch (error) {
       console.error('Failed to delete user:', error);
+      // Revert on failure by reloading
+      loadUsers();
     }
   };
 
