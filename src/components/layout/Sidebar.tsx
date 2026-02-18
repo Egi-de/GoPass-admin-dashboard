@@ -12,6 +12,7 @@ import {
   CreditCard,
   MapPin,
   LogOut,
+  UserCircle,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'next/navigation';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Bookings', href: '/dashboard/bookings', icon: Ticket },
   { name: 'Passes', href: '/dashboard/passes', icon: CreditCard },
   { name: 'Live Tracking', href: '/dashboard/tracking', icon: MapPin },
+  { name: 'Profile', href: '/dashboard/profile', icon: UserCircle },
 ];
 
 export function Sidebar() {

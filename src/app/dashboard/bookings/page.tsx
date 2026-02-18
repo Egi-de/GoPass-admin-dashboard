@@ -24,10 +24,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
+const STATUS_TABS = ['ALL', 'PENDING', 'CONFIRMED', 'ACTIVE', 'USED', 'CANCELLED'] as const;
+type StatusTab = typeof STATUS_TABS[number];
+
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<StatusTab>('ALL');
   const router = useRouter();
 
   useEffect(() => {
@@ -38,7 +42,7 @@ export default function BookingsPage() {
     try {
       setLoading(true);
       const data = await bookingsApi.getAll();
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load bookings:', error);
     } finally {
@@ -57,7 +61,6 @@ export default function BookingsPage() {
 
   const handleCancel = async (id: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
-    
     try {
       await bookingsApi.cancel(id);
       await loadBookings();
@@ -67,8 +70,7 @@ export default function BookingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this booking history?')) return;
-    
+    if (!confirm('Are you sure you want to permanently delete this booking?')) return;
     try {
       await bookingsApi.delete(id);
       await loadBookings();
@@ -77,26 +79,24 @@ export default function BookingsPage() {
     }
   };
 
-  const filteredBookings = bookings.filter(
-    (booking) =>
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
       booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.userId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      (booking.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.route?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTab = activeTab === 'ALL' || booking.status === activeTab;
+    return matchesSearch && matchesTab;
+  });
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
-      case 'CONFIRMED':
-        return 'default';
-      case 'ACTIVE':
-        return 'default'; // Using default for active as well, or could define a new variant
-      case 'PENDING':
-        return 'secondary';
-      case 'CANCELLED':
-        return 'destructive';
-      case 'USED':
-        return 'outline';
-      default:
-        return 'secondary';
+      case 'CONFIRMED': return 'default';
+      case 'ACTIVE': return 'default';
+      case 'PENDING': return 'secondary';
+      case 'CANCELLED': return 'destructive';
+      case 'USED': return 'outline';
+      default: return 'secondary';
     }
   };
 
@@ -106,14 +106,31 @@ export default function BookingsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bookings</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Manage passenger reservations
+            Manage passenger reservations ({bookings.length} total)
           </p>
         </div>
       </div>
 
+      {/* Status filter tabs */}
+      <div className="mb-4 flex gap-2 flex-wrap">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              activeTab === tab
+                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4">
         <Input
-          placeholder="Search by booking or user ID..."
+          placeholder="Search by name, email, or route..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -125,10 +142,10 @@ export default function BookingsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Booking ID</TableHead>
-              <TableHead>User ID</TableHead>
-              <TableHead>Route ID</TableHead>
+              <TableHead>Passenger</TableHead>
+              <TableHead>Route</TableHead>
               <TableHead>Travel Date</TableHead>
-              <TableHead>Seat</TableHead>
+              <TableHead>Seats</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -151,13 +168,31 @@ export default function BookingsPage() {
               filteredBookings.map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell className="font-medium font-mono text-xs">{booking.id.substring(0, 8)}...</TableCell>
-                  <TableCell className="font-mono text-xs">{booking.userId.substring(0, 8)}...</TableCell>
-                  <TableCell className="text-xs">{booking.routeId}</TableCell>
+                  <TableCell>
+                    {booking.user ? (
+                      <div>
+                        <p className="font-medium text-sm">{booking.user.name}</p>
+                        <p className="text-xs text-gray-500">{booking.user.email}</p>
+                      </div>
+                    ) : (
+                      <span className="font-mono text-xs text-gray-400">{booking.userId.substring(0, 8)}...</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {booking.route ? (
+                      <div>
+                        <p className="font-medium text-sm">{booking.route.name}</p>
+                        <p className="text-xs text-gray-500">{booking.route.origin} → {booking.route.destination}</p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">{booking.routeId}</span>
+                    )}
+                  </TableCell>
                   <TableCell>{format(new Date(booking.travelDate), 'PPP p')}</TableCell>
                   <TableCell>{booking.seats.join(', ')}</TableCell>
                   <TableCell>{new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(booking.totalAmount)}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusColor(booking.status) as any}>
+                    <Badge variant={getStatusVariant(booking.status)}>
                       {booking.status}
                     </Badge>
                   </TableCell>

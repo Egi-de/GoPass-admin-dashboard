@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { busesApi } from '@/lib/api/buses';
-import { Bus } from '@/types';
+import { routesApi } from '@/lib/api/routes';
+import { Bus, Route } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -26,6 +27,7 @@ import { AssignDriverDialog } from '@/components/buses/AssignDriverDialog';
 
 export default function BusesPage() {
   const [buses, setBuses] = useState<Bus[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -39,13 +41,23 @@ export default function BusesPage() {
   const loadBuses = async () => {
     try {
       setLoading(true);
-      const data = await busesApi.getAll();
-      setBuses(data);
+      const [busesData, routesData] = await Promise.all([
+        busesApi.getAll(),
+        routesApi.getAll(),
+      ]);
+      setBuses(Array.isArray(busesData) ? busesData : []);
+      setRoutes(Array.isArray(routesData) ? routesData : []);
     } catch (error) {
       console.error('Failed to load buses:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRouteName = (routeId?: string) => {
+    if (!routeId) return 'Unassigned';
+    const route = routes.find(r => r.id === routeId);
+    return route ? `${route.origin} → ${route.destination}` : 'Unknown Route';
   };
 
   const handleCreate = () => {
@@ -173,7 +185,7 @@ export default function BusesPage() {
                     </span>
                   </TableCell>
                   <TableCell>{bus.driver?.name || 'Unassigned'}</TableCell>
-                  <TableCell>{bus.routeId || 'Unassigned'}</TableCell>
+                  <TableCell>{getRouteName(bus.routeId)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

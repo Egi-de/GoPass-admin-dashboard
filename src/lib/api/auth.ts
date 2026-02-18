@@ -10,6 +10,10 @@ export const authApi = {
     return apiClient.get<User>('/auth/profile');
   },
 
+  async updateProfile(data: { name?: string; phone?: string }): Promise<User> {
+    return apiClient.patch<User>('/auth/profile', data);
+  },
+
   async logout(): Promise<void> {
     return apiClient.post('/auth/logout');
   },

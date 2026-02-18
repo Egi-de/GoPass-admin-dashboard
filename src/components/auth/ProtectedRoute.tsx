@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth.store';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, loadStoredAuth } = useAuthStore();
+  const { isAuthenticated, user, loadStoredAuth } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -15,13 +15,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }, [loadStoredAuth]);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
+    if (!mounted) return;
+    if (!isAuthenticated) {
       router.push('/login');
+    } else if (user && user.role !== 'ADMIN') {
+      // Non-admin users are not allowed in the dashboard
+      router.push('/login?error=unauthorized');
     }
-  }, [mounted, isAuthenticated, router]);
+  }, [mounted, isAuthenticated, user, router]);
 
   // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted || !isAuthenticated) {
+  if (!mounted || !isAuthenticated || (user && user.role !== 'ADMIN')) {
     return null;
   }
 

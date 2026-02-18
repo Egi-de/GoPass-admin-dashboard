@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { statsApi } from '@/lib/api/stats';
 import { DashboardStats } from '@/types/stats';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Bus, Bookmark, Ticket } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Users, Bus, Bookmark, Ticket, DollarSign } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -25,11 +27,22 @@ export default function DashboardPage() {
     // Load immediately
     loadStats();
     
-    // Refresh every 10 seconds
-    const interval = setInterval(loadStats, 10000);
+    // Refresh every 30 seconds
+    const interval = setInterval(loadStats, 30000);
     
     return () => clearInterval(interval);
   }, []);
+
+  const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (status) {
+      case 'CONFIRMED': return 'default';
+      case 'ACTIVE': return 'default';
+      case 'PENDING': return 'secondary';
+      case 'CANCELLED': return 'destructive';
+      case 'USED': return 'outline';
+      default: return 'secondary';
+    }
+  };
 
   return (
     <div className="p-8 space-y-8">
@@ -40,7 +53,8 @@ export default function DashboardPage() {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatsCard
           title="Total Users"
           value={stats?.totalUsers}
@@ -65,6 +79,75 @@ export default function DashboardPage() {
           loading={loading}
           icon={<Ticket className="w-4 h-4 text-orange-600" />}
         />
+        <StatsCard
+          title="Total Revenue"
+          value={stats?.totalRevenue}
+          loading={loading}
+          isCurrency
+          icon={<DollarSign className="w-4 h-4 text-emerald-600" />}
+        />
+      </div>
+
+      {/* Recent Bookings */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Bookings</h2>
+        <div className="rounded-lg border bg-white dark:bg-gray-800 shadow overflow-hidden">
+          {loading ? (
+            <div className="p-6 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : !stats?.recentBookings?.length ? (
+            <div className="p-8 text-center text-gray-500">No recent bookings</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b">
+                <tr>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Passenger</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Travel Date</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {stats.recentBookings.map((booking) => (
+                  <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4">
+                      {booking.user ? (
+                        <div>
+                          <p className="font-medium">{booking.user.name}</p>
+                          <p className="text-xs text-gray-500">{booking.user.email}</p>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Unknown</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {booking.route ? (
+                        <span>{booking.route.origin} → {booking.route.destination}</span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                      {format(new Date(booking.travelDate), 'PPP')}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      {new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(booking.totalAmount)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={getStatusVariant(booking.status)}>
+                        {booking.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -74,13 +157,23 @@ function StatsCard({
   title, 
   value, 
   loading,
-  icon
+  icon,
+  isCurrency = false,
 }: { 
   title: string; 
   value?: number; 
   loading: boolean;
   icon?: React.ReactNode;
+  isCurrency?: boolean;
 }) {
+  const displayValue = () => {
+    if (value === undefined) return '-';
+    if (isCurrency) {
+      return new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF', maximumFractionDigits: 0 }).format(value);
+    }
+    return value.toLocaleString();
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
       <div className="flex flex-col gap-1">
@@ -91,8 +184,8 @@ function StatsCard({
         {loading ? (
           <Skeleton className="h-8 w-16 mt-2" />
         ) : (
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-            {value !== undefined ? value : '-'}
+          <p className={`font-bold text-gray-900 dark:text-white mt-2 ${isCurrency ? 'text-lg' : 'text-3xl'}`}>
+            {displayValue()}
           </p>
         )}
       </div>
