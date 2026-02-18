@@ -84,7 +84,10 @@ export default function BookingsPage() {
       booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (booking.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (booking.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (booking.route?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (booking.route?.origin || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.route?.destination || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.route?.operator || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.route?.plateNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = activeTab === 'ALL' || booking.status === activeTab;
     return matchesSearch && matchesTab;
   });
@@ -144,6 +147,7 @@ export default function BookingsPage() {
               <TableHead>Booking ID</TableHead>
               <TableHead>Passenger</TableHead>
               <TableHead>Route</TableHead>
+              <TableHead>Bus</TableHead>
               <TableHead>Travel Date</TableHead>
               <TableHead>Seats</TableHead>
               <TableHead>Amount</TableHead>
@@ -154,13 +158,13 @@ export default function BookingsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredBookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                   No bookings found
                 </TableCell>
               </TableRow>
@@ -180,12 +184,27 @@ export default function BookingsPage() {
                   </TableCell>
                   <TableCell>
                     {booking.route ? (
-                      <div>
-                        <p className="font-medium text-sm">{booking.route.name}</p>
-                        <p className="text-xs text-gray-500">{booking.route.origin} → {booking.route.destination}</p>
-                      </div>
+                      <span className="text-sm">
+                        <span className="text-orange-600 dark:text-orange-400">{booking.route.origin}</span>
+                        <span className="mx-1 text-gray-400">→</span>
+                        <span className="text-orange-600 dark:text-orange-400">{booking.route.destination}</span>
+                      </span>
                     ) : (
                       <span className="text-xs text-gray-400">{booking.routeId}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {booking.route ? (
+                      <div>
+                        <p className="text-sm font-medium">{booking.route.operator || '—'}</p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          {booking.route.buses && booking.route.buses.length > 0
+                            ? booking.route.buses.map((b) => b.plateNumber).join(', ')
+                            : booking.route.plateNumber || '—'}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
                     )}
                   </TableCell>
                   <TableCell>{format(new Date(booking.travelDate), 'PPP p')}</TableCell>

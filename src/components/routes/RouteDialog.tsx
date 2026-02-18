@@ -23,25 +23,25 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 
 const routeSchema = z.object({
-  name: z.string().min(2, 'Route name is required'),
   origin: z.string().min(2, 'Origin is required'),
   destination: z.string().min(2, 'Destination is required'),
+  departureTime: z.string().min(1, 'Departure time is required'),
+  arrivalTime: z.string().min(1, 'Arrival time is required'),
   price: z.number().min(0, 'Price must be positive'),
-  estimatedDuration: z.string().min(1, 'Duration is required'),
-  isActive: z.boolean().optional(),
+  operator: z.string().min(2, 'Operator is required'),
+  totalSeats: z.number().min(1, 'Total seats must be at least 1'),
 });
 
 type RouteFormValues = z.infer<typeof routeSchema>;
+
+// Helper: convert ISO string to datetime-local input value
+const toDatetimeLocal = (iso?: string) => {
+  if (!iso) return '';
+  return new Date(iso).toISOString().slice(0, 16);
+};
 
 interface RouteDialogProps {
   open: boolean;
@@ -52,45 +52,54 @@ interface RouteDialogProps {
 
 export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
 
   const form = useForm<RouteFormValues>({
     resolver: zodResolver(routeSchema),
     defaultValues: {
-      name: '',
       origin: '',
       destination: '',
+      departureTime: '',
+      arrivalTime: '',
       price: 0,
-      estimatedDuration: '',
-      isActive: true,
+      operator: '',
+      totalSeats: 40,
     },
   });
 
   useEffect(() => {
     if (route) {
       form.reset({
-        name: route.name,
         origin: route.origin,
         destination: route.destination,
+        departureTime: toDatetimeLocal(route.departureTime),
+        arrivalTime: toDatetimeLocal(route.arrivalTime),
         price: route.price,
-        estimatedDuration: route.estimatedDuration,
-        isActive: route.isActive,
+        operator: route.operator,
+        totalSeats: route.totalSeats,
       });
+      setImageUrl(route.imageUrl || '');
     } else {
       form.reset({
-        name: '',
         origin: '',
         destination: '',
+        departureTime: '',
+        arrivalTime: '',
         price: 0,
-        estimatedDuration: '',
-        isActive: true,
+        operator: '',
+        totalSeats: 40,
       });
+      setImageUrl('');
     }
-  }, [route, form]);
+  }, [route, open]);
 
   const handleSubmit = async (values: RouteFormValues) => {
     try {
       setLoading(true);
-      await onSubmit(values);
+      await onSubmit({
+        ...values,
+        imageUrl: imageUrl || undefined,
+      });
       onOpenChange(false);
       form.reset();
     } catch (error) {
@@ -102,7 +111,7 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{route ? 'Edit Route' : 'Add New Route'}</DialogTitle>
           <DialogDescription>
@@ -112,20 +121,7 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Route Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Kigali - Musanze" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+            {/* Origin / Destination */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -140,7 +136,6 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="destination"
@@ -156,6 +151,37 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
               />
             </div>
 
+            {/* Departure / Arrival */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="departureTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Departure Time</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="arrivalTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Arrival Time</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Price / Seats */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -164,8 +190,9 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
                   <FormItem>
                     <FormLabel>Price (RWF)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
+                        placeholder="2500"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
@@ -174,15 +201,19 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="estimatedDuration"
+                name="totalSeats"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration</FormLabel>
+                    <FormLabel>Total Seats</FormLabel>
                     <FormControl>
-                      <Input placeholder="2h 30m" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="40"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,25 +221,27 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
               />
             </div>
 
+            {/* Operator */}
             <FormField
               control={form.control}
-              name="isActive"
+              name="operator"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Active Route</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Enable or disable this route
-                    </div>
-                  </div>
+                <FormItem>
+                  <FormLabel>Operator</FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Input placeholder="Volcano Express" {...field} />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
+            />
+
+            {/* Image Upload */}
+            <ImageUploader
+              value={imageUrl}
+              onChange={setImageUrl}
+              folder="routes"
+              label="Route Image"
             />
 
             <DialogFooter>

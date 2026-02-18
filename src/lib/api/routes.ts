@@ -21,8 +21,4 @@ export const routesApi = {
   async delete(id: string): Promise<void> {
     return apiClient.delete(`/routes/${id}`);
   },
-
-  async updateStatus(id: string, isActive: boolean): Promise<Route> {
-    return apiClient.patch<Route>(`/routes/${id}/status`, { isActive });
-  },
 };

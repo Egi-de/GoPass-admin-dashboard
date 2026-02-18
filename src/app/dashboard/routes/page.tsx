@@ -18,10 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Plus, Trash2, Edit, MapPin } from 'lucide-react';
+import { MoreHorizontal, Plus, Trash2, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { RouteDialog } from '@/components/routes/RouteDialog';
-import { Badge } from '@/components/ui/badge';
 
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -34,15 +33,15 @@ export default function RoutesPage() {
     loadRoutes();
   }, []);
 
-  const loadRoutes = async () => {
+  const loadRoutes = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await routesApi.getAll();
-      setRoutes(data);
+      setRoutes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load routes:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -57,26 +56,24 @@ export default function RoutesPage() {
   };
 
   const handleSubmit = async (data: Partial<Route>) => {
-    try {
-      if (selectedRoute) {
-        await routesApi.update(selectedRoute.id, data);
-      } else {
-        await routesApi.create(data);
-      }
-      loadRoutes();
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to save route:', error);
-      throw error;
+    if (selectedRoute) {
+      await routesApi.update(selectedRoute.id, data);
+      setRoutes((prev) =>
+        prev.map((r) => (r.id === selectedRoute.id ? { ...r, ...data } : r))
+      );
+      loadRoutes(true);
+    } else {
+      await routesApi.create(data);
+      await loadRoutes();
     }
+    setIsDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this route?')) return;
-    
     try {
       await routesApi.delete(id);
-      await loadRoutes();
+      setRoutes((prev) => prev.filter((r) => r.id !== id));
     } catch (error) {
       console.error('Failed to delete route:', error);
     }
@@ -84,10 +81,24 @@ export default function RoutesPage() {
 
   const filteredRoutes = routes.filter(
     (route) =>
-      (route.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (route.origin?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (route.destination?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+      route.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      route.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (route.operator?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (route.buses || []).some((b) =>
+        b.plateNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      )
   );
+
+  const formatTime = (iso: string) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString('en-RW', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  };
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(price);
 
   return (
     <div className="p-8">
@@ -106,7 +117,7 @@ export default function RoutesPage() {
 
       <div className="mb-4">
         <Input
-          placeholder="Search by name, origin, or destination..."
+          placeholder="Search by origin, destination, or operator..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -117,40 +128,60 @@ export default function RoutesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Route Name</TableHead>
-              <TableHead>Origin</TableHead>
-              <TableHead>Destination</TableHead>
+              <TableHead>Route</TableHead>
+              <TableHead>Departure</TableHead>
+              <TableHead>Arrival</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Seats</TableHead>
+              <TableHead>Operator</TableHead>
+              <TableHead>Bus Plate</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredRoutes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No routes found
                 </TableCell>
               </TableRow>
             ) : (
               filteredRoutes.map((route) => (
                 <TableRow key={route.id}>
-                  <TableCell className="font-medium">{route.name}</TableCell>
-                  <TableCell>{route.origin}</TableCell>
-                  <TableCell>{route.destination}</TableCell>
-                  <TableCell>{new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(route.price)}</TableCell>
-                  <TableCell>{route.estimatedDuration}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className="text-orange-600 dark:text-orange-400">{route.origin}</span>
+                    <span className="mx-1 text-gray-400">→</span>
+                    <span className="text-orange-600 dark:text-orange-400">{route.destination}</span>
+                  </TableCell>
+                  <TableCell className="text-sm">{formatTime(route.departureTime)}</TableCell>
+                  <TableCell className="text-sm">{formatTime(route.arrivalTime)}</TableCell>
+                  <TableCell>{formatPrice(route.price)}</TableCell>
                   <TableCell>
-                    <Badge variant={route.isActive ? 'default' : 'secondary'}>
-                      {route.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <span className="text-sm">
+                      {route.seatsAvailable ?? route.totalSeats}/{route.totalSeats}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                    {route.operator || '—'}
+                  </TableCell>
+                  <TableCell>
+                    {route.buses && route.buses.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {route.buses.map((bus) => (
+                          <p key={bus.id} className="text-xs font-mono font-medium text-gray-700 dark:text-gray-300">
+                            {bus.plateNumber}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -164,11 +195,10 @@ export default function RoutesPage() {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <MapPin className="mr-2 h-4 w-4" />
-                          Stops
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(route.id)}>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(route.id)}
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>

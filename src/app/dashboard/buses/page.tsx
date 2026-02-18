@@ -174,7 +174,7 @@ export default function BusesPage() {
               filteredBuses.map((bus) => (
                 <TableRow key={bus.id}>
                   <TableCell className="font-medium">{bus.plateNumber}</TableCell>
-                  <TableCell>{bus.capacity} seats</TableCell>
+                  <TableCell>{bus.totalSeats} seats</TableCell>
                   <TableCell>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(

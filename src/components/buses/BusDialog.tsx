@@ -30,10 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 
 const busSchema = z.object({
   plateNumber: z.string().min(2, 'Plate number is required').toUpperCase(),
-  capacity: z.number().min(1, 'Capacity must be at least 1'),
+  totalSeats: z.number().min(1, 'Capacity must be at least 1'),
   status: z.enum(['IDLE', 'ON_ROUTE', 'MAINTENANCE', 'DELAYED']),
 });
 
@@ -48,12 +49,13 @@ interface BusDialogProps {
 
 export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
 
   const form = useForm<BusFormValues>({
     resolver: zodResolver(busSchema),
     defaultValues: {
       plateNumber: '',
-      capacity: 30,
+      totalSeats: 40,
       status: 'IDLE',
     },
   });
@@ -62,22 +64,27 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
     if (bus) {
       form.reset({
         plateNumber: bus.plateNumber,
-        capacity: bus.capacity,
+        totalSeats: bus.totalSeats,
         status: bus.status,
       });
+      setImageUrl(bus.imageUrl || '');
     } else {
       form.reset({
         plateNumber: '',
-        capacity: 30,
+        totalSeats: 40,
         status: 'IDLE',
       });
+      setImageUrl('');
     }
-  }, [bus, form]);
+  }, [bus, open]);
 
   const handleSubmit = async (values: BusFormValues) => {
     try {
       setLoading(true);
-      await onSubmit(values);
+      await onSubmit({
+        ...values,
+        imageUrl: imageUrl || undefined,
+      });
       onOpenChange(false);
       form.reset();
     } catch (error) {
@@ -115,20 +122,28 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
 
             <FormField
               control={form.control}
-              name="capacity"
+              name="totalSeats"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Capacity</FormLabel>
+                  <FormLabel>Total Seats</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    <Input
+                      type="number"
+                      placeholder="40"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <ImageUploader
+              value={imageUrl}
+              onChange={setImageUrl}
+              folder="buses"
+              label="Bus Image"
             />
 
             <FormField
@@ -137,7 +152,7 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />

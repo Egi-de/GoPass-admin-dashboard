@@ -173,15 +173,15 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await usersApi.getAll();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load users:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -197,11 +197,18 @@ export default function UsersPage() {
 
   const handleSubmit = async (data: UserFormData) => {
     if (selectedUser) {
-      await usersApi.update(selectedUser.id, data);
+      const updated = await usersApi.update(selectedUser.id, data);
+      // Immediately update the row in the local list
+      setUsers((prev) =>
+        prev.map((u) => (u.id === selectedUser.id ? { ...u, ...updated } : u))
+      );
+      // Then silently sync with server in background
+      loadUsers(true);
     } else {
       await usersApi.create(data);
+      // Full reload to show new user
+      await loadUsers();
     }
-    await loadUsers();
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {

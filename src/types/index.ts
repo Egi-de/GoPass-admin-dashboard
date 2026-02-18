@@ -29,7 +29,8 @@ export interface AuthResponse {
 export interface Bus {
   id: string;
   plateNumber: string;
-  capacity: number;
+  totalSeats: number;
+  imageUrl?: string;
   status: 'IDLE' | 'ON_ROUTE' | 'DELAYED' | 'MAINTENANCE';
   routeId?: string;
   driverId?: string;
@@ -44,14 +45,17 @@ export interface Bus {
 
 export interface Route {
   id: string;
-  name: string;
   origin: string;
   destination: string;
-  distance: number;
-  estimatedDuration: string;
+  departureTime: string;
+  arrivalTime: string;
   price: number;
-  isActive?: boolean;
-  waypoints?: any;
+  operator: string;
+  seatsAvailable: number;
+  totalSeats: number;
+  imageUrl?: string;
+  plateNumber?: string;
+  buses?: { id: string; plateNumber: string; status: string }[];
   createdAt: string;
   updatedAt: string;
 }
