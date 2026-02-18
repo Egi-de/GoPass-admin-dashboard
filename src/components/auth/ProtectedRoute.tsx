@@ -1,31 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, user, loadStoredAuth } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    loadStoredAuth();
-    setMounted(true);
-  }, [loadStoredAuth]);
+    const init = async () => {
+      await loadStoredAuth();
+      const { isAuthenticated: authed, user: u } = useAuthStore.getState();
+      if (!authed) {
+        router.push('/login');
+      } else if (u && u.role !== 'ADMIN') {
+        router.push('/login?error=unauthorized');
+      }
+    };
+    init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-    if (!isAuthenticated) {
-      router.push('/login');
-    } else if (user && user.role !== 'ADMIN') {
-      // Non-admin users are not allowed in the dashboard
-      router.push('/login?error=unauthorized');
-    }
-  }, [mounted, isAuthenticated, user, router]);
-
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted || !isAuthenticated || (user && user.role !== 'ADMIN')) {
+  // Don't render children until authenticated as admin
+  if (!isAuthenticated || (user && user.role !== 'ADMIN')) {
     return null;
   }
 
