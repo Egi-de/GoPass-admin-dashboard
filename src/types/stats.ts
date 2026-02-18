@@ -10,6 +10,6 @@ export interface DashboardStats {
     totalAmount: number;
     travelDate: string;
     user?: { name: string; email: string };
-    route?: { name: string; origin: string; destination: string };
+    route?: { origin: string; destination: string };
   }>;
 }
