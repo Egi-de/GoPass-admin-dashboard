@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Plus, Trash2, Edit, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 
 import { BusDialog } from "@/components/buses/BusDialog";
 import { AssignDriverDialog } from "@/components/buses/AssignDriverDialog";
@@ -58,6 +59,12 @@ export default function BusesPage() {
     if (!routeId) return "Unassigned";
     const route = routes.find((r) => r.id === routeId);
     return route ? `${route.origin} → ${route.destination}` : "Unknown Route";
+  };
+
+  const getRouteOperator = (routeId?: string) => {
+    if (!routeId) return "—";
+    const route = routes.find((r) => r.id === routeId);
+    return route?.operator || "—";
   };
 
   const handleCreate = () => {
@@ -150,9 +157,11 @@ export default function BusesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Plate Number</TableHead>
               <TableHead>Capacity</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Operator</TableHead>
               <TableHead>Driver</TableHead>
               <TableHead>Route</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -161,14 +170,14 @@ export default function BusesPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredBuses.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
                   No buses found
@@ -177,6 +186,21 @@ export default function BusesPage() {
             ) : (
               filteredBuses.map((bus) => (
                 <TableRow key={bus.id}>
+                  <TableCell>
+                    {bus.imageUrl ? (
+                      <Image
+                        src={bus.imageUrl}
+                        alt={bus.plateNumber}
+                        width={64}
+                        height={40}
+                        className="rounded object-cover w-16 h-10"
+                      />
+                    ) : (
+                      <div className="w-16 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-xs">
+                        No img
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {bus.plateNumber}
                   </TableCell>
@@ -189,6 +213,9 @@ export default function BusesPage() {
                     >
                       {bus.status.replace("_", " ")}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                    {getRouteOperator(bus.routeId)}
                   </TableCell>
                   <TableCell>{bus.driver?.name || "Unassigned"}</TableCell>
                   <TableCell>{getRouteName(bus.routeId)}</TableCell>

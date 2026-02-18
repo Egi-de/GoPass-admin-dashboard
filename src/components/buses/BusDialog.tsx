@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Bus } from '@/types';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Bus } from "@/types";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,21 +21,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ImageUploader } from '@/components/ui/ImageUploader';
+} from "@/components/ui/select";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
 const busSchema = z.object({
-  plateNumber: z.string().min(2, 'Plate number is required').toUpperCase(),
-  totalSeats: z.number().min(1, 'Capacity must be at least 1'),
-  status: z.enum(['IDLE', 'ON_ROUTE', 'MAINTENANCE', 'DELAYED']),
+  plateNumber: z.string().min(2, "Plate number is required").toUpperCase(),
+  totalSeats: z.number().min(1, "Capacity must be at least 1"),
+  status: z.enum(["IDLE", "ON_ROUTE", "MAINTENANCE", "DELAYED"]),
 });
 
 type BusFormValues = z.infer<typeof busSchema>;
@@ -47,16 +47,22 @@ interface BusDialogProps {
   onSubmit: (data: Partial<Bus>) => Promise<void>;
 }
 
-export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps) {
+export function BusDialog({
+  open,
+  onOpenChange,
+  bus,
+  onSubmit,
+}: BusDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState("");
+  const [error, setError] = useState("");
 
   const form = useForm<BusFormValues>({
     resolver: zodResolver(busSchema),
     defaultValues: {
-      plateNumber: '',
+      plateNumber: "",
       totalSeats: 40,
-      status: 'IDLE',
+      status: "IDLE",
     },
   });
 
@@ -67,16 +73,17 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
         totalSeats: bus.totalSeats,
         status: bus.status,
       });
-      setImageUrl(bus.imageUrl || '');
+      setImageUrl(bus.imageUrl || "");
     } else {
       form.reset({
-        plateNumber: '',
+        plateNumber: "",
         totalSeats: 40,
-        status: 'IDLE',
+        status: "IDLE",
       });
-      setImageUrl('');
+      setImageUrl("");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setError("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bus, open]);
 
   const handleSubmit = async (values: BusFormValues) => {
@@ -88,8 +95,16 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
       });
       onOpenChange(false);
       form.reset();
-    } catch (error) {
-      console.error('Failed to submit bus:', error);
+    } catch (err: unknown) {
+      console.error("Failed to submit bus:", err);
+      const apiMessage = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      setError(
+        apiMessage ||
+          (err instanceof Error
+            ? err.message
+            : "Failed to save bus. Please try again."),
+      );
     } finally {
       setLoading(false);
     }
@@ -99,14 +114,17 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{bus ? 'Edit Bus' : 'Add New Bus'}</DialogTitle>
+          <DialogTitle>{bus ? "Edit Bus" : "Add New Bus"}</DialogTitle>
           <DialogDescription>
-            {bus ? 'Update bus details' : 'Enter the details for the new bus'}
+            {bus ? "Update bus details" : "Enter the details for the new bus"}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="plateNumber"
@@ -132,7 +150,9 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
                       type="number"
                       placeholder="40"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -171,12 +191,22 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
               )}
             />
 
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                {error}
+              </p>
+            )}
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Bus'}
+                {loading ? "Saving..." : "Save Bus"}
               </Button>
             </DialogFooter>
           </form>

@@ -1,9 +1,9 @@
-import { apiClient } from './client';
-import { User } from '@/types';
+import { apiClient } from "./client";
+import { User } from "@/types";
 
 export const usersApi = {
   async getAll(): Promise<User[]> {
-    return apiClient.get<User[]>('/users');
+    return apiClient.get<User[]>("/users");
   },
 
   async getById(id: string): Promise<User> {
@@ -11,7 +11,7 @@ export const usersApi = {
   },
 
   async create(data: Partial<User>): Promise<User> {
-    return apiClient.post<User>('/users', data);
+    return apiClient.post<User>("/auth/register", data);
   },
 
   async update(id: string, data: Partial<User>): Promise<User> {
