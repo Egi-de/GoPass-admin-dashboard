@@ -57,31 +57,29 @@ class ApiClient {
     );
   }
 
-  async get<T>(url: string, params?: any) {
+  async get<T = unknown>(url: string, params?: Record<string, unknown>): Promise<T> {
     const response = await this.client.get(url, { params });
-    // Handle both { data: T } and direct T response formats
-    return response.data.data || response.data;
+    return response.data.data ?? response.data;
   }
 
-  async post<T>(url: string, data?: any) {
+  async post<T = unknown>(url: string, data?: unknown): Promise<T> {
     const response = await this.client.post(url, data);
-    // Handle both { data: T } and direct T response formats
-    return response.data.data || response.data;
+    return response.data.data ?? response.data;
   }
 
-  async put<T>(url: string, data?: any) {
+  async put<T = unknown>(url: string, data?: unknown): Promise<T> {
     const response = await this.client.put(url, data);
-    return response.data.data || response.data;
+    return response.data.data ?? response.data;
   }
 
-  async patch<T>(url: string, data?: any) {
+  async patch<T = unknown>(url: string, data?: unknown): Promise<T> {
     const response = await this.client.patch(url, data);
-    return response.data.data || response.data;
+    return response.data.data ?? response.data;
   }
 
-  async delete<T>(url: string) {
+  async delete<T = unknown>(url: string): Promise<T> {
     const response = await this.client.delete(url);
-    return response.data.data || response.data;
+    return response.data.data ?? response.data;
   }
 }
 
