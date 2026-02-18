@@ -76,6 +76,7 @@ export function BusDialog({ open, onOpenChange, bus, onSubmit }: BusDialogProps)
       });
       setImageUrl('');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bus, open]);
 
   const handleSubmit = async (values: BusFormValues) => {

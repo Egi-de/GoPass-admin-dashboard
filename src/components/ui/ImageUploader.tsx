@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { X, ImageIcon, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { apiClient } from '@/lib/api/client';
 
 interface ImageUploaderProps {
@@ -44,15 +45,16 @@ export function ImageUploader({
         reader.readAsDataURL(file);
       });
 
-      const result: any = await apiClient.post('/storage/upload', {
+      const result = await apiClient.post<{ url: string }>('/storage/upload', {
         base64Data,
         folder,
         filename: file.name.replace(/\.[^/.]+$/, ''),
       });
 
       onChange(result.url);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Upload failed. Try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed. Try again.';
+      setError(message);
     } finally {
       setUploading(false);
     }
@@ -87,10 +89,11 @@ export function ImageUploader({
       {value ? (
         /* Preview */
         <div className="relative group rounded-lg overflow-hidden border h-36">
-          <img
+          <Image
             src={value}
             alt="Preview"
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button

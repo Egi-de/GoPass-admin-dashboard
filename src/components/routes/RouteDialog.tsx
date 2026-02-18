@@ -91,6 +91,7 @@ export function RouteDialog({ open, onOpenChange, route, onSubmit }: RouteDialog
       });
       setImageUrl('');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, open]);
 
   const handleSubmit = async (values: RouteFormValues) => {
