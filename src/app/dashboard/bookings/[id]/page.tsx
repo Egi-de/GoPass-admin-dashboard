@@ -112,7 +112,9 @@ export default function BookingDetailsPage() {
             <div>
               <p className="text-sm font-medium text-gray-500">Route</p>
               {booking.route ? (
-                <p className="text-lg font-semibold">{booking.route.name}</p>
+                <p className="text-lg font-semibold">
+                  {booking.route.origin} → {booking.route.destination}
+                </p>
               ) : (
                 <p className="text-lg font-semibold text-gray-400">Route ID: {booking.routeId}</p>
               )}
