@@ -29,9 +29,10 @@ export default function LoginPage() {
       await login(email, password);
       console.log('✅ Login successful, redirecting...');
       router.push('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Login error:', err);
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Login failed. Please check your credentials.';
+      const axiosErr = err as { response?: { data?: { message?: string; error?: string } }; message?: string };
+      const errorMessage = axiosErr.response?.data?.message || axiosErr.response?.data?.error || axiosErr.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
     }
   };

@@ -75,8 +75,9 @@ function UserDialog({
     try {
       await onSubmit(form);
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err.message || 'Failed to save user');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save user';
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || msg);
     } finally {
       setSaving(false);
     }

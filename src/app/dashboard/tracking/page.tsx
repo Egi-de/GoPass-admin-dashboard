@@ -59,7 +59,7 @@ export default function TrackingPage() {
   const [activeBuses, setActiveBuses] = useState<Bus[]>([]);
   const [locations, setLocations] = useState<Record<string, BusLocation>>({});
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -69,7 +69,7 @@ export default function TrackingPage() {
     console.log('🔥 Setting up Firebase listener for /buses');
     console.log('🔥 Firebase Database URL:', process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
     
-    const unsubscribe = onValue(busesRef, (snapshot) => {
+    const _unsubscribe = onValue(busesRef, (snapshot) => {
       console.log('🔥 Firebase snapshot received');
       console.log('🔥 Snapshot exists:', snapshot.exists());
       
@@ -186,7 +186,7 @@ export default function TrackingPage() {
             ) : (
               Object.entries(locations).map(([busId, location]) => {
                 const bus = activeBuses.find(b => b.id === busId);
-                const route = bus ? getBusRoute(bus) : null;
+                const _route = bus ? getBusRoute(bus) : null;
                 
                 return (
                   <Card key={busId} className="cursor-pointer hover:shadow-md transition-shadow">
