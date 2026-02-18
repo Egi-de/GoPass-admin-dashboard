@@ -1,14 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { bookingsApi } from '@/lib/api/bookings';
-import { Booking } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Printer, Calendar, MapPin, User, FileText, Ban } from 'lucide-react';
-import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { bookingsApi } from "@/lib/api/bookings";
+import { Booking } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  Printer,
+  Calendar,
+  MapPin,
+  User,
+  FileText,
+  Ban,
+} from "lucide-react";
+import { format } from "date-fns";
 
 export default function BookingDetailsPage() {
   const params = useParams();
@@ -28,20 +36,21 @@ export default function BookingDetailsPage() {
       const data = await bookingsApi.getById(id);
       setBooking(data);
     } catch (error) {
-      console.error('Failed to load booking:', error);
+      console.error("Failed to load booking:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = async () => {
-    if (!booking || !confirm('Are you sure you want to cancel this booking?')) return;
-    
+    if (!booking || !confirm("Are you sure you want to cancel this booking?"))
+      return;
+
     try {
       await bookingsApi.cancel(booking.id);
       loadBooking(booking.id);
     } catch (error) {
-      console.error('Failed to cancel booking:', error);
+      console.error("Failed to cancel booking:", error);
     }
   };
 
@@ -81,11 +90,11 @@ export default function BookingDetailsPage() {
               </Badge>
             </h1>
             <p className="text-gray-500 mt-1">
-              Created on {format(new Date(booking.createdAt), 'PPP p')}
+              Created on {format(new Date(booking.createdAt), "PPP p")}
             </p>
           </div>
           <div className="flex gap-2">
-            {booking.status !== 'CANCELLED' && booking.status !== 'USED' && (
+            {booking.status !== "CANCELLED" && booking.status !== "USED" && (
               <Button variant="destructive" onClick={handleCancel}>
                 <Ban className="mr-2 h-4 w-4" />
                 Cancel Booking
@@ -116,24 +125,28 @@ export default function BookingDetailsPage() {
                   {booking.route.origin} → {booking.route.destination}
                 </p>
               ) : (
-                <p className="text-lg font-semibold text-gray-400">Route ID: {booking.routeId}</p>
+                <p className="text-lg font-semibold text-gray-400">
+                  Route ID: {booking.routeId}
+                </p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-500">Origin</p>
-                <p>{booking.route?.origin || 'Unknown'}</p>
+                <p>{booking.route?.origin || "Unknown"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Destination</p>
-                <p>{booking.route?.destination || 'Unknown'}</p>
+                <p>{booking.route?.destination || "Unknown"}</p>
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Departure Time</p>
+              <p className="text-sm font-medium text-gray-500">
+                Departure Time
+              </p>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-400" />
-                <p>{format(new Date(booking.travelDate), 'PPP p')}</p>
+                <p>{format(new Date(booking.travelDate), "PPP p")}</p>
               </div>
             </div>
           </CardContent>
@@ -149,8 +162,12 @@ export default function BookingDetailsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-500">Passenger Name</p>
-              <p className="text-lg font-semibold">{booking.user?.name || 'Unknown'}</p>
+              <p className="text-sm font-medium text-gray-500">
+                Passenger Name
+              </p>
+              <p className="text-lg font-semibold">
+                {booking.user?.name || "Unknown"}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Contact</p>
@@ -160,13 +177,19 @@ export default function BookingDetailsPage() {
             <div className="pt-4 border-t">
               <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-medium text-gray-500">Status</p>
-                <Badge variant={booking.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                <Badge
+                  variant={
+                    booking.status === "ACTIVE" ? "default" : "secondary"
+                  }
+                >
                   {booking.status}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-gray-500">Seats</p>
-                <p className="font-mono font-bold">{booking.seats.join(', ')}</p>
+                <p className="font-mono font-bold">
+                  {booking.seats.join(", ")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -184,18 +207,26 @@ export default function BookingDetailsPage() {
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
                 <span>Price per seat</span>
-                <span>{booking.route?.price ? new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(booking.route.price) : 'N/A'}</span>
+                <span>
+                  {booking.route?.price
+                    ? new Intl.NumberFormat("rw-RW", {
+                        style: "currency",
+                        currency: "RWF",
+                      }).format(booking.route.price)
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between items-center mb-4">
                 <span>Seats ({booking.seats.length})</span>
-                <span>
-                 x {booking.seats.length}
-                </span>
+                <span>x {booking.seats.length}</span>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-center font-bold text-lg">
                 <span>Total Amount</span>
                 <span className="text-green-600">
-                  {new Intl.NumberFormat('rw-RW', { style: 'currency', currency: 'RWF' }).format(booking.totalAmount)}
+                  {new Intl.NumberFormat("rw-RW", {
+                    style: "currency",
+                    currency: "RWF",
+                  }).format(booking.totalAmount)}
                 </span>
               </div>
             </div>

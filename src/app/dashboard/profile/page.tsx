@@ -1,13 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { authApi } from '@/lib/api/auth';
-import { useAuthStore } from '@/stores/auth.store';
-import { User } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { UserCircle, Save, KeyRound, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { authApi } from "@/lib/api/auth";
+import { useAuthStore } from "@/stores/auth.store";
+import { User } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { UserCircle, Save, KeyRound, CheckCircle } from "lucide-react";
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+const getErrorMessage = (err: unknown, fallback: string) => {
+  const error = err as ApiError;
+  return error?.response?.data?.message || error?.message || fallback;
+};
 
 export default function ProfilePage() {
   const { user, setUser } = useAuthStore();
@@ -15,29 +29,29 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   // Profile form state
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
-  const [profileError, setProfileError] = useState('');
+  const [profileError, setProfileError] = useState("");
 
   // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const data = await authApi.getProfile();
         setProfile(data);
-        setName(data.name || '');
-        setPhone(data.phone || '');
+        setName(data.name || "");
+        setPhone(data.phone || "");
       } catch (err) {
-        console.error('Failed to load profile:', err);
+        console.error("Failed to load profile:", err);
       } finally {
         setLoading(false);
       }
@@ -48,7 +62,7 @@ export default function ProfilePage() {
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileSaving(true);
-    setProfileError('');
+    setProfileError("");
     setProfileSuccess(false);
     try {
       const updated = await authApi.updateProfile({ name, phone });
@@ -59,8 +73,8 @@ export default function ProfilePage() {
       }
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 3000);
-    } catch (err: any) {
-      setProfileError(err?.response?.data?.message || err.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      setProfileError(getErrorMessage(err, "Failed to update profile"));
     } finally {
       setProfileSaving(false);
     }
@@ -68,28 +82,28 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
+    setPasswordError("");
     setPasswordSuccess(false);
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError("New passwords do not match");
       return;
     }
     if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError("Password must be at least 6 characters");
       return;
     }
 
     setPasswordSaving(true);
     try {
-      await authApi.updateProfile({ currentPassword, newPassword } as any);
+      await authApi.updateProfile({ currentPassword, newPassword });
       setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       setTimeout(() => setPasswordSuccess(false), 3000);
-    } catch (err: any) {
-      setPasswordError(err?.response?.data?.message || err.message || 'Failed to change password');
+    } catch (err: unknown) {
+      setPasswordError(getErrorMessage(err, "Failed to change password"));
     } finally {
       setPasswordSaving(false);
     }
@@ -106,7 +120,9 @@ export default function ProfilePage() {
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Profile
+        </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
           Manage your admin account information
         </p>
@@ -118,7 +134,9 @@ export default function ProfilePage() {
           <UserCircle className="w-10 h-10 text-gray-400" />
         </div>
         <div>
-          <p className="text-xl font-semibold text-gray-900 dark:text-white">{profile?.name}</p>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+            {profile?.name}
+          </p>
           <p className="text-sm text-gray-500">{profile?.email}</p>
           <span className="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
             {profile?.role}
@@ -137,7 +155,7 @@ export default function ProfilePage() {
             <Input
               id="email"
               type="email"
-              value={profile?.email || ''}
+              value={profile?.email || ""}
               disabled
               className="bg-gray-50 dark:bg-gray-900 text-gray-500 cursor-not-allowed"
             />
@@ -162,7 +180,9 @@ export default function ProfilePage() {
             />
           </div>
           {profileError && (
-            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">{profileError}</p>
+            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+              {profileError}
+            </p>
           )}
           {profileSuccess && (
             <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded">
@@ -170,9 +190,13 @@ export default function ProfilePage() {
               Profile updated successfully
             </div>
           )}
-          <Button type="submit" disabled={profileSaving} className="w-full sm:w-auto">
+          <Button
+            type="submit"
+            disabled={profileSaving}
+            className="w-full sm:w-auto"
+          >
             <Save className="mr-2 h-4 w-4" />
-            {profileSaving ? 'Saving...' : 'Save Changes'}
+            {profileSaving ? "Saving..." : "Save Changes"}
           </Button>
         </form>
       </div>
@@ -216,7 +240,9 @@ export default function ProfilePage() {
             />
           </div>
           {passwordError && (
-            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">{passwordError}</p>
+            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+              {passwordError}
+            </p>
           )}
           {passwordSuccess && (
             <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded">
@@ -224,9 +250,14 @@ export default function ProfilePage() {
               Password changed successfully
             </div>
           )}
-          <Button type="submit" disabled={passwordSaving} variant="outline" className="w-full sm:w-auto">
+          <Button
+            type="submit"
+            disabled={passwordSaving}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
             <KeyRound className="mr-2 h-4 w-4" />
-            {passwordSaving ? 'Changing...' : 'Change Password'}
+            {passwordSaving ? "Changing..." : "Change Password"}
           </Button>
         </form>
       </div>
